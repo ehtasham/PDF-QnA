@@ -1,19 +1,13 @@
-import streamlit as st
 
 import os
-from llama_index.query_engine import CitationQueryEngine
-from llama_index import (
-    VectorStoreIndex,
-    SimpleDirectoryReader,
-    StorageContext,
-    ServiceContext,
-)
 import pinecone
-from llama_index import VectorStoreIndex, StorageContext
-from llama_index.vector_stores import PineconeVectorStore
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+import streamlit as st
 from llama_index import ServiceContext
 from llama_index.embeddings import LangchainEmbedding
+from llama_index.vector_stores import PineconeVectorStore
+from llama_index.query_engine import CitationQueryEngine
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+from llama_index import VectorStoreIndex, SimpleDirectoryReader, StorageContext, ServiceContext
 
 st.title("QnA on PDF's")
 
@@ -27,7 +21,16 @@ os.environ["OPENAI_API_KEY"] = open_ai_key
 
 
 @st.cache_resource
-def create_embeddings(data_path):
+def create_index(data_path):
+    """
+    Create and return a VectorStoreIndex for PDF documents.
+
+    Parameters:
+    - data_path (str): The path to the directory containing PDF documents.
+
+    Returns:
+    - VectorStoreIndex: The created index for the PDF documents.
+    """
     pinecone.init(api_key=pinecone_key, environment="us-east1-gcp")
     embed_model = LangchainEmbedding(
         HuggingFaceEmbeddings(
@@ -48,7 +51,12 @@ def create_embeddings(data_path):
 
 @st.cache_resource
 def initializing():
+    """
+    Initialize Pinecone and create a CitationQueryEngine.
 
+    Returns:
+    - CitationQueryEngine: The initialized query engine.
+    """
     print("Setting up RAG")
     pinecone.init(api_key=pinecone_key, environment="us-east1-gcp")
     embed_model = LangchainEmbedding(
@@ -60,7 +68,11 @@ def initializing():
 
     vector_store = PineconeVectorStore(pinecone_index=pinecone_index)
 
+    # create Index, this step is only needed once,
+    # index = create_index("data_path/")
+
     print("LOADING INDEX")
+    # Load index from vector store, use this after creating index
     index = VectorStoreIndex.from_vector_store(
         vector_store, service_context)
 
